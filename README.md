@@ -43,6 +43,13 @@ If you'd like to learn Verilog then there are some nice free resources online:
 
 - [HDLBits](https://hdlbits.01xz.net/wiki/Main_Page) contains practice exercises for Verilog
 - [NandLand](https://nandland.com/learn-verilog/)
+- [Asic World](https://asic-world.com/)
+- [Chip Verify](https://www.chipverify.com/)
+
+
+## Further courses
+- [Digital Systems Laboratory at MIT](https://fpga.mit.edu/6205/F25)
+- [Digital Design and Computer Architecture at ETH-Zürich](https://safari.ethz.ch/ddca/spring2025/doku.php?id=schedule)
 
 
 ## Tools used
