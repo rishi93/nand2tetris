@@ -1,5 +1,7 @@
 # Nand2Tetris Hardware Design
 
+![Everthing is Design](images/everything_is_design.png "Everything is Design")
+
 This repository contains the hardware design files for the "Hack" computer
 as described in the popular [nand2tetris](https://www.nand2tetris.org/) course.
 
@@ -35,6 +37,8 @@ there's the [Coursera Nand2Tetris course](https://www.coursera.org/learn/build-a
 Verilog designs can be run on an FPGA. The "Hack" computer is fairly simple and can run on any basic
 FPGA. The Lattice ice40 has a completely open-source toolchain "icestorm". So an ice40 FPGA is
 highly recommended. This workflow will also be added this repo in the future.
+
+![What is Design](images/what_is_design.png "What is Design")
 
 ## Learning Resources
 If you'd like to learn Verilog then there are some nice free resources online:
