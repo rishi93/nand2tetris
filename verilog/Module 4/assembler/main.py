@@ -23,6 +23,9 @@ class Assembler:
     def decode(self, output_file):
         with open(output_file, 'w') as f:
             for line in self.lines:
+                # Ignore comments
+                if self.is_comment(line):
+                    continue
                 binary_instr = self.decode_line(line)
                 f.write(binary_instr + "\n") 
 
@@ -45,6 +48,9 @@ class Assembler:
 
     def is_c_instruction(self, line):
         return not self.is_a_instruction(line)
+    
+    def is_comment(self, line):
+        return line.startswith("//")
 
     def a_instruction(self, line):
         # An A-instruction looks like: @15
@@ -131,6 +137,11 @@ class Assembler:
         # start with a "@" and looks like below:
         # destination = computation ; jump
         equation, _, jump = instr.partition(";")
+
+        # Strip away the white space if any on either side
+        # of the semicolon (;)
+        equation = equation.strip()
+        jump = jump.strip()
 
         destination, _, computation = equation.partition("=")
 

@@ -35,10 +35,12 @@ module Computer_Test;
         $display("reset = %b", reset);
         $display("--------------------");
 
-        for (i = 0; i < 7; i = i + 1) begin
-            $display("End of clock cycle %d", i+1);
-            #2 print_ram0();
+        for (i = 0; i < 50; i = i + 1) begin
+            $display("Clock cycle: %d", i+1);
+            #2;
         end
+
+        print_ram0();
 
         $finish;
     end
