@@ -8,11 +8,10 @@ ALU:
 
 CPU:
 	iverilog -o CPU/sim.out \
-		DFF/DFF.v Bit/Bit.v Register/Register.v PC/PC.v \
+		DFlipFlop/DFF.v Bit/Bit.v Register/Register.v PC/PC.v \
 		ALU/ALU.v \
 	    CPU/CPU.v CPU/Test.v
 	vvp CPU/sim.out
-	gtkwave CPU/Test.vcd
 
 clean:
 	rm -f */sim.out */Test.vcd

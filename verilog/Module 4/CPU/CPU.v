@@ -1,5 +1,5 @@
 module CPU(
-    // input to Register M; contents of RAM[A]
+    // input to the memory
     input wire [15:0] inM,
     // Instruction for execution
     input wire [15:0] instruction,
@@ -7,13 +7,14 @@ module CPU(
     // Reset = 1, puts the PC back to 0,
     // restarts the current program
     input wire reset, clk,
-    // Output from register M
-    output wire [15:0] outM,
-    // write to M?
+    // write to memory?
     output wire writeM,
-    input wire [15:0] addressM,
+    // The 15-bit address to the memory
+    output wire [14:0] addressM,
+    // The 16-bit output to write to the memory
+    output wire [15:0] outM,
     // Address of next instruction
-    output wire [15:0] pc
+    output wire [14:0] pc
 );
     /*
         The CPU can execute two types of instructions
@@ -58,14 +59,35 @@ module CPU(
         Therefore we can read those 3 bits here as "store in a", "store in d" and
         "store in m". A 1 in the bit location representing a yes, and a 0 a no.
     */
- 
+
+    // If the instruction is a C-instruction or an A-instruction
+    wire isCInstr, isAInstr;
+
     // 16-bit wires that transfer input to the A-register
     // and output from the A-register
     wire [15:0] inA, outA;
+    wire loadA;
+
+    // 16-bit wires that transfer input to the D-register
+    // and output from the D-register
+    wire [15:0] inD, outD;
+    wire loadD;
+
+    // The two operands to the ALU
+    wire [15:0] x, y;
+    // the first operand is always the Register-D
+    // the second operand is either Register-A or memory location M,
+    // depending on the "a" bit in position 12 like already explained above
+
+    wire useM; // Should we use memory location M? If not, use register A 
+    wire [15:0] outAOrM; // carries output from either A-register or memory location M
+
     // one bit wires that act as input control bits to the ALU
     wire zx, nx, zy, ny, f, no;
-    // The 15-bit address to the program memory (RAM). This is the M-register
-    wire [14:0] addressM;
+
+    // 16-bit output from the ALU 
+    wire [15:0] outALU;
+
     /*
         The control bits that represent what the result looks like:
             zr => the result is 0
@@ -73,7 +95,16 @@ module CPU(
             pos => the result is positive
             notPos => the result is not positive
     */
-    wire zr, ng, pos, notPos;
+    // the two control outputs from the ALU
+    wire zr, ng;
+    // further control pins derived from the outputs of the ALU
+    wire pos, notPos;
+
+    /*
+        The destination bits
+    */
+    wire storeInA, storeInD, storeInM;
+
     /*
         The jump bits, the PC jumps to A, depending on what the result looks like
         j1 == 1 -> Jump if result is less than 0
@@ -91,30 +122,73 @@ module CPU(
         1  1  1  -> unconditional jump
     */
     wire j1, j2, j3, jump;
+    wire [15:0] pc_16bit;
+
+    assign isCInstr = instruction[15];
+    assign isAInstr = ~isCInstr;
+
+    // bits 14 and 13 are ignored in a C-instruction
+
+    // So we know one of the operands is always the D-register. Now
+    // is the other operand the A-register or the M-register? This
+    // depends on the "a" bit which is position 12
+    assign useM = isCInstr & instruction[12];
+
+    // If it's a C-instruction, then those 6 "c" bits represent
+    // zx, nx, zy, ny, f and no respectively
+    assign zx = instruction[11] & isCInstr;
+    assign nx = instruction[10] & isCInstr;
+    assign zy = instruction[9] & isCInstr;
+    assign ny = instruction[8] & isCInstr;
+    assign f  = instruction[7] & isCInstr;
+    assign no = instruction[6] & isCInstr;
+
+    // The next 3 bits d1, d2, d3 determine where
+    // the result of the computation should be stored
+    assign storeInA = isCInstr & instruction[5];
+    assign storeInD = isCInstr & instruction[4];
+    assign storeInM = isCInstr & instruction[3];
+
+    assign j1 = isCInstr & instruction[2];
+    assign j2 = isCInstr & instruction[1];
+    assign j3 = isCInstr & instruction[0];
+
+    // Prepare for jump
+    assign jumpLessThan = ng & j1;
+    assign jumpEqualTo = zr & j2;
+    assign jumpGreaterThan = pos & j3;
 
     // An A-instruction means you just store the instruction value in the
     // A-register,
     // If C-instruction, then you store the ALU output in the A-register
-    assign inA = instruction[15]? outALU : instruction;
+    assign inA = isAInstr ? instruction : outALU;
 
     // If it's an A-instruction, then we need to write the above value
     // into the A-register, or if it's a C-instruction whose destinations
     // includes the A-register, then also we need to write the above value
     // into the A-register
-    assign loadA = ~instruction[15] | instruction[5];
+    assign loadA = isAInstr | storeInA;
 
-    // If it's a C-instruction, then those 6 "c" bits represent
-    // zx, nx, zy, ny, f and no respectively
-    assign zx = instruction[11] & instruction[15];
-    assign nx = instruction[10] & instruction[15];
-    assign zy = instruction[9] & instruction[15];
-    assign ny = instruction[8] & instruction[15];
-    assign f  = instruction[7] & instruction[15];
-    assign no = instruction[6] & instruction[15];
+    // The A Register
+    Register ARegister(
+        .in(inA),
+        .load(loadA),
+        .clk(clk),
+        .out(outA)
+    );
+
+    // The address to be passed to the memory
+    assign addressM = outA[14:0];
+
+    assign outAOrM = useM ? inM : outA;
+
+    // Now we prepare to pass two operands into the ALU
+    assign x = outD;
+    assign y = outAOrM;
 
     ALU alu(
-        .x(outD),
-        .y(outAM),
+        .x(x),
+        .y(y),
         .zx(zx),
         .nx(nx),
         .zy(zy),
@@ -126,57 +200,49 @@ module CPU(
         .ng(ng)
     );
 
-    assign outM = outALU;
-
-    // The A Register
-    Register ARegister(
-        .in(inA),
-        .load(loadA),
-        .out(outA),
-        .clk(clk),
-    );
-
-    assign outM = outA[14:0];
-
-    // So we know one of the operands is always the D-register. Now
-    // is the other operand the M-register or the A-register. This
-    // depends on the "a" bit which is position 12
-    assign outAM = instruction[12] ? inM : outA;
-
-    // If it's a C-instruction, AND the destination includes M, then writeM
-    // should be enabled, to be able to write to the memory
-    assign writeM = instruction[15] & instruction[3];
-
-    // If it's a C-instruction, AND the destination includes D, then loadD
-    // should be enabled, to be able to write to the D-register
-    assign loadD = instruction[15] & instruction[4];
+    // Writing to the D-register
+    assign inD = outALU;
+    assign loadD = storeInD;
 
     Register DRegister(
-        .in(outALU),
+        .in(inD),
         .load(loadD),
         .clk(clk),
         .out(outD)
     );
 
+    // Writing to Memory
+
+    // If it's a C-instruction, AND the destination includes M, then writeM
+    // should be enabled, to be able to write to the memory
+    assign outM = outALU;
+    assign writeM = storeInM;
+
+    // Prepare for the jump
+
     // Sign of the result
     assign notPos = zr | ng;
     assign pos = ~notPos;
 
-    // Prepare for jump
-    assign j1 = ng & instruction[2];
-    assign j2 = zr & instruction[1];
-    assign j3 = pos & instruction[0];
-
     // Jump if C-instruction, and any of the jump bits is set
-    assign jump = instruction[15] & (j1 | j2 | j3);
-    
+    assign jump = isCInstr & (
+        jumpLessThan | 
+        jumpEqualTo | 
+        jumpGreaterThan
+    );
+
+    // The value of the A-register is always supplied to the Program Counter
+    // but it loads that value only when there is a jump required
     PC ProgramCounter(
-        .in(inA),
-        .load(jump)
+        .in(outA),
+        .clk(clk),
+        .load(jump),
         .reset(reset),
         .inc(1'b1),
-        .clk(clk),
-        .out(pc)
+        .out(pc_16bit)
     );
+
+    // ignore the 15th bit, since pc can only represent positive numbers
+    assign pc = pc_16bit[14:0];
 
 endmodule;
