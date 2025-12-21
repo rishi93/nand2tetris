@@ -29,6 +29,13 @@ cd verilog/Module\ 2 # There's a backslash here since the name of the folder con
 make FullAdder
 ```
 
+## Running the whole computer
+- In the `Module 4` folder in the `verilog` folder, the whole Computer comes together and you can write a program in the hack assembly language in the `Module 4/prog.hack` file and then do `make Computer` to test out the `Computer` running the `prog.hack` file.
+- The `Module 4` folder has a python script in the `assembler` folder which translate your assembly program into machine code and then the Computer uses a ROM which is filled with the machine code
+- And the Computer starts running the instructions in the ROM one by one. We're storing the result of the computation at address 0 in the RAM, which we print in every clock cycle, to check if the result of the computation is correct
+
+
+## Lecture slides
 Additionally the `lectures` folder contains all the lecture slides downloaded from the Coursera
 website. If you're someone who prefers watching lecture videos rather than reading a textbook then
 there's the [Coursera Nand2Tetris course](https://www.coursera.org/learn/build-a-computer) as well from the same authors

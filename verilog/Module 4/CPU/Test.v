@@ -23,9 +23,6 @@ module CPU_Test;
         );
 
     initial begin
-        // Provide the instruction @15 to the CPU
-        inM = 16'b0000_0000_0000_0000;
-
         // Press the reset button
         // It goes to 1, then bounces back to 0
         $display("--------------------");
@@ -68,8 +65,18 @@ module CPU_Test;
         $display("pc = %b", pc);
         $display("--------------------");
 
-        // A = D + A
-        instruction = 16'b111_0_000010_100_000;
+        // D = D + A
+        instruction = 16'b111_0_000010_010_000;
+        #2;
+        $display("instruction = %b", instruction);
+        $display("writeM = %b", writeM);
+        $display("addressM = %b", addressM);
+        $display("outM = %b", outM);
+        $display("pc = %b", pc);
+        $display("--------------------");
+
+        // @0
+        instruction = 16'b0_000000000000000;
         #2;
         $display("instruction = %b", instruction);
         $display("writeM = %b", writeM);
@@ -79,7 +86,7 @@ module CPU_Test;
         $display("--------------------");
 
         // RAM[A] = D
-        instruction = 16'b111_0_110000_001_000;
+        instruction = 16'b111_0_001100_001_000;
         #2;
         $display("instruction = %b", instruction);
         $display("writeM = %b", writeM);
