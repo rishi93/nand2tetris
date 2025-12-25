@@ -35,7 +35,7 @@ module Computer_Test;
         $display("reset = %b", reset);
         $display("--------------------");
 
-        for (i = 0; i < 50; i = i + 1) begin
+        for (i = 0; i <= 100; i = i + 1) begin
             $display("Clock cycle: %d", i+1);
             #2;
         end
